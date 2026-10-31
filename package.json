@@ -1,5 +1,5 @@
 {
-  "name": "breakcheck",
+  "name": "upgrade-impact-analyzer",
   "displayName": "Upgrade Impact Analyzer",
   "description": "Scans dependencies across TypeScript/JavaScript (automated AST breaking-change diffing) and Python, Rust, Go, PHP, Ruby (call-site review assistance).",
   "version": "1.0.0",
