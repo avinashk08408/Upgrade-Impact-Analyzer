@@ -1,0 +1,10 @@
+.vscode/**
+.git/**
+.github/**
+src/**
+test/**
+tsconfig.json
+vite.config.ts
+vitest.config.ts
+*.log
+

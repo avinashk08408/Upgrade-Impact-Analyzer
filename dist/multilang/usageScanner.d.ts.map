@@ -1,0 +1,1 @@
+{"version":3,"file":"usageScanner.d.ts","sourceRoot":"","sources":["../../src/multilang/usageScanner.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,aAAa,CAAC;AACjD,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,sBAAsB,CAAC;AA2BtD,qBAAa,qBAAqB;WACZ,iBAAiB,CACnC,WAAW,EAAE,MAAM,EACnB,WAAW,EAAE,MAAM,EACnB,SAAS,EAAE,SAAS,GACnB,OAAO,CAAC,aAAa,EAAE,CAAC;CAsO5B"}

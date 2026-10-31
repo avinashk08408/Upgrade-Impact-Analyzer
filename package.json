@@ -1,0 +1,65 @@
+{
+  "name": "breakcheck",
+  "displayName": "Upgrade Impact Analyzer",
+  "description": "Scans dependencies across TypeScript/JavaScript (automated AST breaking-change diffing) and Python, Rust, Go, PHP, Ruby (call-site review assistance).",
+  "version": "1.0.0",
+  "publisher": "breakcheck",
+  "engines": {
+    "vscode": "^1.100.0",
+    "node": ">=20.0.0"
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "breakcheck.openDashboard",
+        "title": "Upgrade Impact Analyzer: Open Web Dashboard"
+      },
+      {
+        "command": "breakcheck.runInTerminal",
+        "title": "Upgrade Impact Analyzer: Launch in Terminal"
+      }
+    ]
+  },
+  "type": "module",
+  "bin": {
+    "breakcheck": "./bin/breakcheck.js"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "package": "vsce package",
+    "dev": "vite",
+    "ui": "vite",
+    "build": "vite build && tsc",
+    "test": "vitest run",
+    "preview": "vite preview",
+    "cli": "node ./bin/breakcheck.js",
+    "watch": "node ./bin/breakcheck.js --watch"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "pacote": "^18.0.6",
+    "picocolors": "^1.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-morph": "^22.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/pacote": "^11.1.8",
+    "@types/vscode": "^1.100.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vscode/vsce": "^4.1.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11",
+    "vitest": "^1.6.0"
+  }
+}

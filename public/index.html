@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BreakCheck - Dependency Upgrade Impact Analyzer</title>
+  <!-- Tailwind CSS CDN for minimal, professional design -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel Standalone for inline JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [packageName, setPackageName] = useState("axios");
+      const [targetVersion, setTargetVersion] = useState("1.7.0");
+      const [fromVersion, setFromVersion] = useState("");
+      const [installedPackages, setInstalledPackages] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [summary, setSummary] = useState(null);
+      const [error, setError] = useState(null);
+      const [fixedItems, setFixedItems] = useState({});
+
+      useEffect(() => {
+        fetch("/api/status")
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.packages && data.packages.length > 0) {
+              setInstalledPackages(data.packages);
+              setPackageName(data.packages[0].name);
+              setFromVersion(data.packages[0].version || "");
+            }
+          })
+          .catch(() => {});
+      }, []);
+
+      const handlePackageChange = (name) => {
+        setPackageName(name);
+        const found = installedPackages.find((p) => p.name === name);
+        if (found && found.version) {
+          setFromVersion(found.version);
+        }
+      };
+
+      const handleAnalyze = async (e) => {
+        if (e) e.preventDefault();
+        setLoading(true);
+        setError(null);
+        setSummary(null);
+        setFixedItems({});
+
+        try {
+          const res = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              packageName,
+              targetVersion,
+              fromVersion: fromVersion || undefined
+            })
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || "Analysis failed");
+          }
+          setSummary(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleApplyFix = async (item, index) => {
+        try {
+          const res = await fetch("/api/fix", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ item })
+          });
+          const result = await res.json();
+          if (result.success) {
+            setFixedItems((prev) => ({ ...prev, [index]: true }));
+          } else {
+            alert("Could not apply fix: " + result.message);
+          }
+        } catch (err) {
+          alert("Fix failed: " + err.message);
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Header */}
+          <header className="bg-white border-b border-slate-200 px-6 py-4">
+            <div className="max-w-6xl mx-auto flex items-center justify-between">
+              <div>
+                <div className="text-xl font-bold tracking-tight text-slate-900">
+                  BREAKCHECK
+                </div>
+                <div className="text-xs text-slate-500 font-medium">
+                  Dependency Upgrade Impact Analyzer
+                </div>
+              </div>
+              <div className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded border border-slate-300">
+                LOCAL WORKSPACE MODE
+              </div>
+            </div>
+          </header>
+
+          {/* Main Container */}
+          <main className="max-w-6xl mx-auto w-full px-6 py-8 flex-1">
+            {/* Input Form Card */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6 mb-8">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-600 mb-4">
+                Analyze Dependency Upgrade
+              </h2>
+
+              <form onSubmit={handleAnalyze} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Package Name
+                  </label>
+                  {installedPackages.length > 0 ? (
+                    <select
+                      value={packageName}
+                      onChange={(e) => handlePackageChange(e.target.value)}
+                      className="w-full text-sm border border-slate-300 rounded px-3 py-2 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    >
+                      {installedPackages.map((pkg) => (
+                        <option key={pkg.name} value={pkg.name}>
+                          {pkg.name} (currently {pkg.version || "installed"})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={packageName}
+                      onChange={(e) => setPackageName(e.target.value)}
+                      placeholder="e.g. axios"
+                      className="w-full text-sm border border-slate-300 rounded px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                      required
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Current Version (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={fromVersion}
+                    onChange={(e) => setFromVersion(e.target.value)}
+                    placeholder="Auto-detect from node_modules"
+                    className="w-full text-sm border border-slate-300 rounded px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Target Upgrade Version
+                  </label>
+                  <input
+                    type="text"
+                    value={targetVersion}
+                    onChange={(e) => setTargetVersion(e.target.value)}
+                    placeholder="e.g. 1.7.0"
+                    className="w-full text-sm border border-slate-300 rounded px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm px-4 py-2 rounded transition-colors disabled:opacity-50"
+                  >
+                    {loading ? "Scanning..." : "Check Impact"}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded text-sm text-red-800">
+                <div className="font-semibold mb-1">Analysis Error</div>
+                <div>{error}</div>
+              </div>
+            )}
+
+            {/* Empty State Prompt */}
+            {!summary && !loading && !error && (
+              <div className="text-center py-16 bg-white rounded-lg border border-slate-200">
+                <div className="text-base font-semibold text-slate-700 mb-1">
+                  Ready to scan your codebase
+                </div>
+                <div className="text-sm text-slate-500 max-w-md mx-auto">
+                  Select a package and target version above to see only the breaking changes that affect the functions you actually use.
+                </div>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {loading && (
+              <div className="text-center py-16 bg-white rounded-lg border border-slate-200">
+                <div className="text-sm font-semibold text-slate-700 animate-pulse mb-2">
+                  Analyzing code structure and remote blueprints...
+                </div>
+                <div className="text-xs text-slate-400">
+                  Inspecting AST call sites and fetching type definitions from npm.
+                </div>
+              </div>
+            )}
+
+            {/* Analysis Results View */}
+            {summary && !loading && (
+              <div className="space-y-6">
+                {/* Result Overview Banner */}
+                <div className={`p-6 rounded-lg border ${
+                  summary.items.length === 0
+                    ? "bg-emerald-50 border-emerald-200"
+                    : summary.riskScore > 50
+                    ? "bg-red-50 border-red-200"
+                    : "bg-amber-50 border-amber-200"
+                }`}>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                          summary.items.length === 0
+                            ? "bg-emerald-200 text-emerald-900"
+                            : summary.riskScore > 50
+                            ? "bg-red-200 text-red-900"
+                            : "bg-amber-200 text-amber-900"
+                        }`}>
+                          {summary.items.length === 0 ? "STATUS: SAFE TO UPGRADE" : `STATUS: ${summary.riskScore > 50 ? "HIGH RISK" : "MODERATE RISK"}`}
+                        </span>
+                        <span className="text-xs text-slate-500 font-medium">
+                          {summary.packageName} ({summary.currentVersion} to {summary.targetVersion})
+                        </span>
+                      </div>
+
+                      <div className="text-base font-bold text-slate-900">
+                        {summary.items.length === 0
+                          ? `All ${summary.totalUpstreamChanges} upstream changes are safe. None affect your code.`
+                          : `${summary.totalUpstreamChanges} total changes in ${summary.packageName}, but only ${summary.affectedUsagesCount} affect your code.`}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-xs font-semibold text-slate-500 uppercase">
+                        Upgrade Risk Index
+                      </div>
+                      <div className={`text-2xl font-black ${
+                        summary.items.length === 0
+                          ? "text-emerald-700"
+                          : summary.riskScore > 50
+                          ? "text-red-700"
+                          : "text-amber-700"
+                      }`}>
+                        {summary.riskScore} / 100
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* If Issues Exist: List each Issue Card */}
+                {summary.items.length > 0 && (
+                  <div className="space-y-6">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-600">
+                      Impacted Call Sites ({summary.items.length})
+                    </h3>
+
+                    {summary.items.map((item, idx) => (
+                      <div key={idx} className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        {/* Issue Header */}
+                        <div className="bg-slate-50 border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded border border-red-200">
+                              {item.breakingChange.severity}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-700">
+                              {item.breakingChange.category.replace(/_/g, " ")}
+                            </span>
+                            <span className="text-xs text-slate-400">|</span>
+                            <span className="text-xs font-mono text-slate-600">
+                              {item.usage.filePath}:{item.usage.line}
+                            </span>
+                          </div>
+
+                          {fixedItems[idx] ? (
+                            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+                              FIX APPLIED TO FILE
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleApplyFix(item, idx)}
+                              className="text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white px-3 py-1 rounded transition-colors"
+                            >
+                              Apply 1-Click Fix
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Issue Body */}
+                        <div className="p-6 space-y-4">
+                          {/* Plain English Upstream Explanation */}
+                          <div>
+                            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                              Why the library author made this change
+                            </div>
+                            <div className="text-sm text-slate-800 leading-relaxed bg-slate-50 p-3 rounded border border-slate-200">
+                              {item.upstreamRationale}
+                            </div>
+                          </div>
+
+                          {/* Runtime Risk */}
+                          <div>
+                            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                              What happens if you upgrade without fixing
+                            </div>
+                            <div className="text-sm text-red-900 bg-red-50 p-3 rounded border border-red-200">
+                              {item.runtimeRisk}
+                            </div>
+                          </div>
+
+                          {/* Side-by-side Code Diff */}
+                          <div>
+                            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                              Code Comparison (Before vs. After)
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="bg-red-50/50 border border-red-200 rounded p-3">
+                                <div className="text-xs font-semibold text-red-700 mb-1">
+                                  Current Code (Line {item.usage.line})
+                                </div>
+                                <pre className="text-xs font-mono text-slate-800 whitespace-pre-wrap break-all bg-white p-2 rounded border border-red-100">
+                                  {item.remediation.beforeCode}
+                                </pre>
+                              </div>
+
+                              <div className="bg-emerald-50/50 border border-emerald-200 rounded p-3">
+                                <div className="text-xs font-semibold text-emerald-700 mb-1">
+                                  Recommended Fix
+                                </div>
+                                <pre className="text-xs font-mono text-slate-800 whitespace-pre-wrap break-all bg-white p-2 rounded border border-emerald-100">
+                                  {item.remediation.afterCode}
+                                </pre>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Why Fix Works */}
+                          <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-200">
+                            <span className="font-semibold text-slate-700">Why this fix works: </span>
+                            {item.remediation.explanation}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+
+          {/* Footer */}
+          <footer className="border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-400">
+            BreakCheck &bull; Minimal, Explainable Upgrade Impact Analyzer
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
+

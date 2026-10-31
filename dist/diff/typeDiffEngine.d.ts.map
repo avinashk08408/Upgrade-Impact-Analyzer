@@ -1,0 +1,1 @@
+{"version":3,"file":"typeDiffEngine.d.ts","sourceRoot":"","sources":["../../src/diff/typeDiffEngine.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,sBAAsB,EAAE,cAAc,EAAE,MAAM,aAAa,CAAC;AAE1E,qBAAa,cAAc;IAClB,IAAI,CACT,UAAU,EAAE,GAAG,CAAC,MAAM,EAAE,sBAAsB,CAAC,EAC/C,UAAU,EAAE,GAAG,CAAC,MAAM,EAAE,sBAAsB,CAAC,GAC9C,cAAc,EAAE;CAkEpB"}

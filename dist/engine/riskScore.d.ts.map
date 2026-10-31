@@ -1,0 +1,1 @@
+{"version":3,"file":"riskScore.d.ts","sourceRoot":"","sources":["../../src/engine/riskScore.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,aAAa,CAAC;AAEpD,qBAAa,cAAc;IACzB;;OAEG;WACW,aAAa,CAAC,KAAK,EAAE,gBAAgB,EAAE,GAAG,MAAM;WAwBhD,WAAW,CAAC,KAAK,EAAE,MAAM,GAAG,SAAS,GAAG,KAAK,GAAG,QAAQ,GAAG,MAAM,GAAG,UAAU;CAO7F"}
