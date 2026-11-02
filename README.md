@@ -96,13 +96,6 @@ npm run package
 ```
 *(Or `npx @vscode/vsce package`).*
 
-Before publishing to the Visual Studio Marketplace:
-1. Ensure you have registered your publisher account on the [Visual Studio Marketplace Management Portal](https://marketplace.visualstudio.com/manage).
-2. If your publisher ID differs from `breakcheck`, update the `"publisher"` field in `package.json`.
-3. Publish using `npx @vscode/vsce publish`.
-
----
-
 ## License
 
 Licensed under the MIT License.
